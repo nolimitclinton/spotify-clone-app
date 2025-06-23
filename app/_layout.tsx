@@ -1,29 +1,44 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { PlaylistProvider } from '@/context/playlistContext';
+import { SpotifyProvider, useSpotify } from '@/context/spotifyContext';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Slot } from 'expo-router';
+import { Text, View } from 'react-native';
+import LoginScreen from './login';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+function LayoutContent() {
+  const { user, isLoading } = useSpotify();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#fff' }}>Loading user...</Text>
+      </View>
+    );
   }
 
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  return <Slot />;
+}
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'Gotham-Bold': require('../assets/fonts/Gotham/Gotham-Bold.ttf'),
+    'Poppins-Regular': require('../assets/fonts/poppins/Poppins-Regular.ttf'),
+    'Poppins-SemiBold': require('../assets/fonts/poppins/Poppins-SemiBold.ttf'),
+    'DMSans-Regular': require('../assets/fonts/dm-sans/DMSans-Regular.ttf'),
+    'DMSans-Bold': require('../assets/fonts/dm-sans/DMSans-Bold.ttf'),
+  });
+
+  if (!fontsLoaded) return null;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <SpotifyProvider>
+      <PlaylistProvider>
+        <LayoutContent />
+      </PlaylistProvider>
+    </SpotifyProvider>
   );
 }
