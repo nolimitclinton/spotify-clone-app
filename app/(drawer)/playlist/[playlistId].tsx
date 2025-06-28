@@ -1,5 +1,6 @@
 import TrackCard from '@/components/TrackCard';
 import { COLORS } from '@/constants/theme';
+import { useLibrary } from '@/context/libraryContext';
 import { usePlaylist } from '@/context/playlistContext';
 import { useSpotify } from '@/context/spotifyContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,9 +10,10 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PlaylistDetailScreen() {
-  const { playlistId, isLocal } = useLocalSearchParams();
+  const { playlistId } = useLocalSearchParams();
   const { accessToken } = useSpotify();
   const { playlists } = usePlaylist();
+  const { likedSongs } = useLibrary();
   const navigation = useNavigation();
   const [tracks, setTracks] = useState<any[]>([]);
   const [playlistInfo, setPlaylistInfo] = useState<any>(null);
@@ -28,33 +30,60 @@ export default function PlaylistDetailScreen() {
 
       setPlaylistInfo(selected);
 
-      if (isLocal === 'true') {
-        setTracks(selected.tracks || []);
-      } else {
-        try {
-          const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          const data = await res.json();
-          setTracks(data.items.map((item: any) => item.track));
-        } catch (err) {
-          console.error('Failed to load playlist tracks:', err);
-        }
+      try {
+        const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const data = await res.json();
+        setTracks(
+          data.items
+            .filter((item: any) => item.track && item.track.uri) 
+            .map((item: any) => ({
+              id: item.track.id,
+              name: item.track.name,
+              uri: item.track.uri,
+              album: item.track.album,
+              artists: item.track.artists,
+            }))
+        );
+      } catch (err) {
+        console.error('Failed to load playlist tracks:', err);
       }
     };
+
     fetchPlaylist();
   }, [playlistId, playlists]);
+  const handleRemove = async (trackId: string) => {
+    try {
+      const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tracks: [{ uri: `spotify:track:${trackId}` }],
+        }),
+      });
+  
+      const data = await res.json();
+      console.log('Remove response:', data);
+      setTracks(tracks.filter(track => track.id !== trackId));
+    } catch (err) {
+      console.error('Failed to remove track:', err);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+        <Ionicons name="chevron-back" size={24} color={COLORS.white} />
       </TouchableOpacity>
 
       {playlistInfo && (
         <View style={styles.header}>
           <Image
-            source={{ uri: playlistInfo.images?.[0]?.url || playlistInfo.image || 'https://via.placeholder.com/150' }}
+            source={{ uri: playlistInfo.image || 'https://via.placeholder.com/150' }}
             style={styles.cover}
           />
           <Text style={styles.name}>{playlistInfo.name}</Text>
@@ -66,7 +95,7 @@ export default function PlaylistDetailScreen() {
         data={tracks}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (
-          <TrackCard track={item} number={index + 1} showNumber />
+          <TrackCard track={item} number={index + 1} showNumber showEllipsis onRemoveFromPlaylist={() => handleRemove(item.id)} />
         )}
         ListEmptyComponent={<Text style={styles.empty}>No tracks in this playlist.</Text>}
       />
@@ -78,7 +107,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    paddingTop: 50, // Added space from top
+    paddingTop: 50,
     paddingHorizontal: 16,
   },
   backButton: {
@@ -102,7 +131,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   trackCount: {
-    color: '#aaa',
+    color: COLORS.gray,
     fontSize: 14,
   },
   empty: {

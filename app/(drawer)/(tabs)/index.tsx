@@ -2,38 +2,208 @@ import BackgroundScreen from '@/components/BackgroundScreen';
 import { IMAGES } from '@/constants/images';
 import { COLORS, FONTS } from '@/constants/theme';
 import { useSpotify } from '@/context/spotifyContext';
-import { Ionicons } from '@expo/vector-icons';
-import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { DrawerActions, useNavigation } from '@react-navigation/native';
-
-import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-type RootDrawerParamList = {
-  '(tabs)': undefined;
-};
-
-const categories = ['All', 'Music', 'Podcasts', 'Wrapped'];
-
-const mixes = [
-  { id: '1', name: 'just hits', image: IMAGES.justHits },
-  { id: '2', name: 'Christmas Vibes 2023 🎄', image: IMAGES.christmas },
-  { id: '3', name: 'On Repeat', image: IMAGES.onRepeat },
-  { id: '4', name: 'Daily Mix 1', image: IMAGES.dailymix },
-  { id: '5', name: 'baddie.', image: IMAGES.baddie },
-  { id: '6', name: 'Ariana Grande Radio', image: IMAGES.ariana },
-  { id: '7', name: 'K-Pop Gaming', image: IMAGES.kpop },
-  { id: '8', name: 'Missed Hits', image: IMAGES.missedHits },
+const categories = [
+  { id: 'all', name: 'All' },
+  { id: 'playlists', name: 'Playlists' },
+  { id: 'albums', name: 'Albums' },
+  { id: 'artists', name: 'Artists' },
+  //{ id: 'featured', name: 'Featured' },
 ];
 
 const HomeScreen = () => {
-  const { user } = useSpotify();
-  const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
-const openDrawer = () => {
-  navigation.dispatch(DrawerActions.openDrawer());
-};
-  const [activeCategory, setActiveCategory] = useState('All');
+  const router = useRouter();
+  const { 
+    user, 
+    accessToken,
+    featuredPlaylists,
+    newReleases,
+    userPlaylists,
+    topArtists,
+    getTopArtists,
+    getFeaturedPlaylists,
+    getNewReleases,
+    getUserPlaylists,
+    topTracks,
+    getTopTracks,
+    isLoading
+  } = useSpotify();
+  
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  const [categoryPlaylists, setCategoryPlaylists] = useState<any[]>([]);
+
+  const handleItemPress = (item: any) => {
+    if (item.id === 'liked-songs') {
+      router.push('/(drawer)/liked');
+    } else if (item.type === 'playlist') {
+      router.push({
+        pathname: '/(drawer)/playlist/[playlistId]',
+        params: { playlistId: item.id },
+      });
+    } else if (item.type === 'artist') {
+      router.push({
+        pathname: '/artist/[id]',
+        params: { id: item.id },
+      });
+    } else {
+      router.push({
+        pathname: '/(drawer)/media/[mediaId]',
+        params: { mediaId: item.id },
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const fetchData = async () => {
+      try {
+        await Promise.all([
+          getFeaturedPlaylists(),
+          getNewReleases(),
+          getUserPlaylists(),
+          getTopArtists(),
+          getTopTracks(),
+        ]);
+
+        const categoriesRes = await fetch(
+          'https://api.spotify.com/v1/browse/categories?limit=6',
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        const categoriesData = (await categoriesRes.json()).categories?.items || [];
+        setCategoriesList(categoriesData);
+
+        if (categoriesData.length > 0) {
+          const categoryPlaylistsRes = await fetch(
+            `https://api.spotify.com/v1/browse/categories/${categoriesData[0].id}/playlists?limit=6`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+          setCategoryPlaylists((await categoryPlaylistsRes.json()).playlists?.items || []);
+        }
+
+      } catch (error) {
+        console.error('Failed to fetch Spotify data:', error);
+      }
+    };
+
+    fetchData();
+  }, [accessToken]);
+
+  const renderItem = (item: any, type: string) => {
+    const itemWithType = { ...item, type };
+    const imageUrl =
+      item.images?.[0]?.url ||                  
+      item.album?.images?.[0]?.url ||           
+      IMAGES.doja;                              
+  
+    return (
+      <TouchableOpacity 
+        key={item.id} 
+        style={styles.tile}
+        onPress={() => handleItemPress(itemWithType)}
+      >
+        <Image 
+          source={{ uri: imageUrl }} 
+          style={styles.tileImage} 
+        />
+        <Text style={styles.tileText} numberOfLines={2}>{item.name}</Text>
+      </TouchableOpacity>
+    );
+  };
+  const renderContent = () => {
+    switch (activeCategory) {
+      case 'all':
+        return (
+          <>
+            <Text style={styles.sectionTitle}>Your playlists</Text>
+            <View style={styles.grid}>
+              {userPlaylists.map(item => renderItem(item, 'playlist'))}
+            </View>
+
+            <Text style={styles.sectionTitle}>New releases</Text>
+            <View style={styles.grid}>
+              {newReleases.map(item => renderItem(item, 'album'))}
+            </View>
+
+            <Text style={styles.sectionTitle}>Top artists</Text>
+            <View style={styles.grid}>
+              {topArtists.map(item => renderItem(item, 'artist'))}
+            </View>
+            
+            <Text style={styles.sectionTitle}>Top tracks</Text>
+            <View style={styles.grid}>
+              {topTracks.map(item => renderItem(item, 'track'))}
+            </View>
+          </>
+        );
+      case 'playlists':
+        return (
+          <>
+            <Text style={styles.sectionTitle}>Your playlists</Text>
+            <View style={styles.grid}>
+              {userPlaylists.map(item => renderItem(item, 'playlist'))}
+            </View>
+
+            <Text style={styles.sectionTitle}>Featured playlists</Text>
+            <View style={styles.grid}>
+              {featuredPlaylists.map(item => renderItem(item, 'playlist'))}
+            </View>
+          </>
+        );
+      case 'albums':
+        return (
+          <>
+            <Text style={styles.sectionTitle}>New releases</Text>
+            <View style={styles.grid}>
+              {newReleases.map(item => renderItem(item, 'album'))}
+            </View>
+          </>
+        );
+      case 'artists':
+        return (
+          <>
+            <Text style={styles.sectionTitle}>Top artists</Text>
+            <View style={styles.grid}>
+              {topArtists.map(item => renderItem(item, 'artist'))}
+            </View>
+          </>
+        );
+      case 'featured':
+        return (
+          <>
+            <Text style={styles.sectionTitle}>Featured playlists</Text>
+            <View style={styles.grid}>
+              {featuredPlaylists.map(item => renderItem(item, 'playlist'))}
+            </View>
+
+            {categoriesList.length > 0 && (
+              <>
+                <Text style={styles.sectionTitle}>{categoriesList[0].name}</Text>
+                <View style={styles.grid}>
+                  {categoryPlaylists.map(item => renderItem(item, 'playlist'))}
+                </View>
+              </>
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <BackgroundScreen scroll={false}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </BackgroundScreen>
+    );
+  }
 
   return (
     <BackgroundScreen>
@@ -45,7 +215,7 @@ const openDrawer = () => {
             contentContainerStyle={styles.topBarScroll}
           >
             <TouchableOpacity 
-              onPress={openDrawer}
+              onPress={() => router.push('/(drawer)/(tabs)/explore')}
               style={styles.avatarWrapper}
             >
               <Image 
@@ -54,79 +224,45 @@ const openDrawer = () => {
               />
             </TouchableOpacity>
 
-            {categories.map(cat => {
-              const isActive = cat === activeCategory;
-              return (
-                <TouchableOpacity
-                  key={cat}
+            {categories.map(cat => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.categoryButton,
+                  activeCategory === cat.id && { backgroundColor: COLORS.primary },
+                ]}
+                onPress={() => setActiveCategory(cat.id)}
+              >
+                <Text
                   style={[
-                    styles.categoryButton,
-                    isActive && { backgroundColor: COLORS.primary },
+                    styles.categoryText,
+                    activeCategory === cat.id && { color: COLORS.background },
                   ]}
-                  onPress={() => setActiveCategory(cat)}
                 >
-                  <Text
-                    style={[
-                      styles.categoryText,
-                      isActive && { color: COLORS.background },
-                    ]}
-                  >
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
 
-        <View style={styles.grid}>
-          {mixes.map(mix => (
-            <View key={mix.id} style={styles.tile}>
-              <Image source={mix.image} style={styles.tileImage} />
-              <Text style={styles.tileText}>{mix.name}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Text style={styles.sectionTitle}>Picked for you</Text>
-        <View style={styles.featuredTile}>
-          <TouchableOpacity style={styles.featuredAddButton}>
-            <Image source={IMAGES.add} style={styles.iconButton} />
-          </TouchableOpacity>
-
-          <View style={styles.featuredContent}>
-            <Image source={IMAGES.kpop} style={styles.featuredImage} />
-            <View style={styles.featuredTextContainer}>
-              <Text style={styles.featuredLabel}>Playlist</Text>
-              <Text style={styles.featuredTitle}>K-Pop Gaming</Text>
-              <Text style={styles.featuredDescription}>
-                Enjoy fantastic gameplay with k-pop music!
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.featuredPlayButton}>
-            <Ionicons name="play-circle" size={32} color={COLORS.white} />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.sectionTitle}>Trending albums for you</Text>
-        <View style={styles.trendingRow}>
-          <Image source={IMAGES.trending1} style={styles.trendingImage} />
-          <Image source={IMAGES.trending2} style={styles.trendingImage} />
-          <Image source={IMAGES.trending3} style={styles.trendingImage} />
-        </View>
+        <ScrollView>
+          {renderContent()}
+        </ScrollView>
       </View>
     </BackgroundScreen>
   );
 };
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingBottom: 70, 
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   topBarContainer: {
     marginBottom: 16,
@@ -174,6 +310,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     marginRight: 10,
+    borderRadius: 4,
   },
   tileText: {
     color: COLORS.white,
@@ -189,82 +326,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 12,
   },
-  
-  logout: {
-    color: COLORS.primary,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  featuredTile: {
-    position: 'relative',
-    backgroundColor: COLORS.surface,
-    marginBottom: 20,
-    width: '100%',
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  featuredContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  featuredTextContainer: {
-    marginLeft: 12,
-    flex: 1,
-    marginBottom: 50,
-  },
-  featuredLabel: {
-    color: COLORS.white,
-    fontSize: 12,
-    fontFamily: FONTS.dmSans,
-    opacity: 0.7,
-  },
-  featuredTitle: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: FONTS.dmSans,
-    marginTop: 4,
-  },
-  featuredDescription: {
-    color: COLORS.white,
-    fontSize: 13,
-    fontFamily: FONTS.dmSans,
-    marginTop: 2,
-    flexWrap: 'wrap',
-  },
-  featuredImage: {
-    width: 152,
-    height: 152,
-    borderRadius: 8,
-  },
-  trendingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between', 
-    gap: 12,
-    marginBottom: 20,
-  },
-  
-  trendingImage: {
-    width: 130,
-    height: 130,
-    borderRadius: 8,
-  },
-  featuredAddButton: {
-    position: 'absolute',
-    left: 175,
-    bottom: 12,
-    zIndex: 1,
-  },
-  featuredPlayButton: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
-    zIndex: 1,
-  },
-  iconButton: {
-    width: 24,
-    height: 24,
-    tintColor: COLORS.gray,
-  },
 });
+
+export default HomeScreen;

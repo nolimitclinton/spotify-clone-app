@@ -1,3 +1,4 @@
+import { LibraryProvider } from '@/context/libraryContext';
 import { PlaylistProvider } from '@/context/playlistContext';
 import { SpotifyProvider, useSpotify } from '@/context/spotifyContext';
 import { useFonts } from 'expo-font';
@@ -37,7 +38,9 @@ export default function RootLayout() {
   return (
     <SpotifyProvider>
       <PlaylistProvider>
+      <LibraryProvider>
         <LayoutContent />
+        </LibraryProvider>
       </PlaylistProvider>
     </SpotifyProvider>
   );

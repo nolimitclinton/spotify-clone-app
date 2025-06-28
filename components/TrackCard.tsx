@@ -1,19 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { COLORS, FONTS } from '../constants/theme';
-import { useSpotify } from '../context/spotifyContext';
 import PlaylistModal from './PlaylistModal';
 
 type Track = {
   id: string;
   name: string;
-  popularity?: number;
   preview_url?: string;
   album: {
     images: { url: string }[];
   };
   artists: { name: string }[];
+  uri: string;
 };
 
 type TrackCardProps = {
@@ -22,6 +29,8 @@ type TrackCardProps = {
   number?: number;
   subtitle?: string;
   showEllipsis?: boolean;
+  onRemoveFromPlaylist?: () => void;
+  onPress?: () => void;
 };
 
 export default function TrackCard({
@@ -30,17 +39,20 @@ export default function TrackCard({
   number,
   subtitle,
   showEllipsis = false,
+  onRemoveFromPlaylist,
 }: TrackCardProps) {
-  const { handlePlayPreview } = useSpotify();
-  const [showModal, setShowModal] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const handlePress = () => {
     if (!track.preview_url) {
       Alert.alert('Preview Unavailable', 'This track does not have a preview.');
       return;
     }
-    handlePlayPreview(track);
+    
   };
+
+  const handleEllipsis = () => setShowMenu(true);
 
   return (
     <>
@@ -51,23 +63,50 @@ export default function TrackCard({
           style={styles.image}
         />
         <View style={styles.trackInfo}>
-          <Text style={styles.title} numberOfLines={1}>
-            {track.name}
-          </Text>
+          <Text style={styles.title} numberOfLines={1}>{track.name}</Text>
           <Text style={styles.subtitle} numberOfLines={1}>
             {subtitle || track.artists.map(a => a.name).join(', ')}
           </Text>
         </View>
+
         {showEllipsis && (
-          <TouchableOpacity onPress={() => setShowModal(true)} style={styles.trackEllipsis}>
+          <TouchableOpacity onPress={handleEllipsis} style={styles.trackEllipsis}>
             <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.gray} />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
 
-      {showEllipsis && (
-        <PlaylistModal visible={showModal} onClose={() => setShowModal(false)} track={track} />
-      )}
+      {/* Modal for Add/Remove options */}
+      <Modal visible={showMenu} transparent animationType="fade">
+        <TouchableOpacity style={styles.overlay} onPress={() => setShowMenu(false)}>
+          <View style={styles.menu}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowMenu(false);
+                setShowPlaylistModal(true);
+              }}>
+              <Text style={styles.menuOption}>Add to Playlist</Text>
+            </TouchableOpacity>
+
+            {onRemoveFromPlaylist && (
+              <TouchableOpacity
+                onPress={() => {
+                  setShowMenu(false);
+                  onRemoveFromPlaylist();
+                }}>
+                <Text style={styles.menuOption}>Remove from Playlist</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Playlist Modal */}
+      <PlaylistModal
+        visible={showPlaylistModal}
+        onClose={() => setShowPlaylistModal(false)}
+        track={track}
+      />
     </>
   );
 }
@@ -112,5 +151,21 @@ const styles = StyleSheet.create({
   trackEllipsis: {
     padding: 8,
     marginLeft: 'auto',
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 40,
+  },
+  menu: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
+    padding: 16,
+  },
+  menuOption: {
+    color: COLORS.white,
+    fontSize: 16,
+    paddingVertical: 8,
   },
 });

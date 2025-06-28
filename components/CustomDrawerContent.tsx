@@ -1,4 +1,3 @@
-// components/CustomDrawerContent.tsx
 import { IMAGES } from '@/constants/images';
 import { COLORS } from '@/constants/theme';
 import { useSpotify } from '@/context/spotifyContext';

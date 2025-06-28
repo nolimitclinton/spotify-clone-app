@@ -60,10 +60,10 @@ export default function SearchScreen() {
         </View>
 
         <View style={styles.searchBox}>
-          <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color={COLORS.gray} style={styles.searchIcon} />
           <TextInput
             placeholder="What do you want to listen to?"
-            placeholderTextColor="#999"
+            placeholderTextColor= {COLORS.background}
             style={styles.input}
             value={query}
             onChangeText={setQuery}
@@ -71,7 +71,7 @@ export default function SearchScreen() {
           />
           {showSearchResults && (
             <TouchableOpacity onPress={() => { setQuery(''); setShowSearchResults(false); }}>
-              <Text style={{ color: COLORS.primary, fontWeight: '600' }}>Cancel</Text>
+              <Text style={{ color: COLORS.background, fontWeight: '600' }}>Cancel</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -92,7 +92,7 @@ export default function SearchScreen() {
                       <Text style={{ color: COLORS.white }}>{item}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => removeRecent(item)}>
-                      <Ionicons name="close" size={16} color="#aaa" />
+                      <Ionicons name="close" size={16} color={COLORS.gray} />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -104,7 +104,7 @@ export default function SearchScreen() {
                 <Text style={styles.sectionTitle}>Search Results</Text>
                 {searchResults.map((item) =>
                   item.type === 'track' ? (
-                    <TrackCard key={item.id} track={item} onAddToPlaylist={() => openPlaylistModal(item)} showEllipsis/>
+                    <TrackCard key={item.id} track={item}  showEllipsis/>
                   ) : (
                     <ArtistCard key={item.id} artist={item} />
                   )
@@ -115,13 +115,21 @@ export default function SearchScreen() {
         ) : (
           <>
             <Text style={styles.sectionTitle}>Picked for you</Text>
-            <View style={styles.card}>
-              <Image source={IMAGES.kpop} style={styles.cardImage} />
-              <View style={styles.cardDetails}>
-                <Text style={styles.cardLabel}>Playlist</Text>
-                <Text style={styles.cardTitle}>K-Pop Gaming</Text>
-                <Text style={styles.cardSubtitle}>Enjoy fantastic gameplay with k-pop music!</Text>
-              </View>
+                    <View style={styles.featuredTile}>
+                      <TouchableOpacity style={styles.featuredAddButton}>
+                      <Ionicons name="ellipsis-horizontal" size={18} color={COLORS.white} />
+                      </TouchableOpacity>
+            
+                      <View style={styles.featuredContent}>
+                        <Image source={IMAGES.kpop} style={styles.featuredImage} />
+                        <View style={styles.featuredTextContainer}>
+                          <Text style={styles.featuredLabel}>Playlist</Text>
+                          <Text style={styles.featuredTitle}>K-Pop Gaming</Text>
+                          <Text style={styles.featuredDescription}>
+                            Enjoy fantastic gameplay with k-pop music!
+                          </Text>
+                        </View>
+                      </View>
               <TouchableOpacity style={styles.playButton}>
                 <Ionicons name="play" size={18} color={COLORS.background} />
               </TouchableOpacity>
@@ -131,17 +139,24 @@ export default function SearchScreen() {
             <View style={styles.genreRow}>
               <View style={styles.genreTile}>
                 <Image source={IMAGES.cozy} style={styles.genreImage} />
-                <Text style={styles.genreLabel}>#cozy</Text>
+                {/* <Text style={styles.genreLabel}>#cozy</Text> */}
               </View>
               <View style={styles.genreTile}>
                 <Image source={IMAGES.korean} style={styles.genreImage} />
-                <Text style={styles.genreLabel}>#korean indie</Text>
+                {/* <Text style={styles.genreLabel}>#korean indie</Text> */}
               </View>
               <View style={styles.genreTile}>
                 <Image source={IMAGES.healing} style={styles.genreImage} />
-                <Text style={styles.genreLabel}>#healing</Text>
-              </View>
+                {/* <Text style={styles.genreLabel}>#healing</Text> */}
+              </View>          
             </View>
+              <Text style={styles.sectionTitle}>Browse all</Text>
+                  <View style={styles.trendingRow}>
+                    <Image source={IMAGES.trending1} style={styles.trendingImage} />
+                    <Image source={IMAGES.trending2} style={styles.trendingImage} />
+                    <Image source={IMAGES.trending3} style={styles.trendingImage} />
+                    </View>
+            
           </>
         )}
       </ScrollView>
@@ -193,7 +208,7 @@ const styles = StyleSheet.create({
   playButton: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
@@ -208,7 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   genreTile: { flex: 1 },
-  genreImage: { width: '100%', height: 160, borderRadius: 8 },
+  genreImage: { width: '100%', height: 200, borderRadius: 8 },
   genreLabel: {
     color: COLORS.white,
     marginTop: 6,
@@ -228,5 +243,66 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderBottomColor: '#333',
     borderBottomWidth: 1,
+  },
+  featuredTile: {
+    position: 'relative',
+    backgroundColor: COLORS.surface,
+    marginBottom: 20,
+    width: '100%',
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featuredContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featuredTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+    marginBottom: 50,
+  },
+  featuredLabel: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontFamily: FONTS.dmSans,
+    opacity: 0.7,
+  },
+  featuredTitle: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: FONTS.dmSans,
+    marginTop: 4,
+  },
+  featuredDescription: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontFamily: FONTS.dmSans,
+    marginTop: 2,
+    flexWrap: 'wrap',
+  },
+  featuredImage: {
+    width: 152,
+    height: 152,
+    borderRadius: 8,
+  },
+  featuredAddButton: {
+    position: 'absolute',
+    left: 175,
+    bottom: 12,
+    zIndex: 1,
+  },
+  trendingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', 
+    gap: 12,
+    marginBottom: 20,
+  },
+  
+  trendingImage: {
+    width: 130,
+    height: 130,
+    borderRadius: 8,
   },
 });

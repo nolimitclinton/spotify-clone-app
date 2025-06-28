@@ -2,13 +2,15 @@ import { COLORS } from '@/constants/theme';
 import { usePlaylist } from '@/context/playlistContext';
 import React, { useEffect, useState } from 'react';
 import {
-    FlatList,
-    Modal,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 
 interface Props {
@@ -27,7 +29,8 @@ export default function PlaylistModal({ visible, onClose, track }: Props) {
   }, [visible]);
 
   const handleAdd = async (playlistId: string) => {
-    await addToPlaylist(playlistId, track.uri);
+    console.log('Track passed to addToPlaylist:', track);
+    await addToPlaylist(playlistId, track);
     onClose();
   };
 
@@ -36,7 +39,7 @@ export default function PlaylistModal({ visible, onClose, track }: Props) {
     setLoading(true);
     const newPlaylist = await createPlaylist(newName.trim());
     if (newPlaylist?.id) {
-      await addToPlaylist(newPlaylist.id, track.uri);
+      await addToPlaylist(newPlaylist.id, track);
     }
     setNewName('');
     setLoading(false);
@@ -45,46 +48,112 @@ export default function PlaylistModal({ visible, onClose, track }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalBackground}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>Add to Playlist</Text>
-          <FlatList
-            data={playlists}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => handleAdd(item.id)}>
-                <Text style={styles.item}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={<Text style={styles.empty}>No playlists found</Text>}
-          />
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.modalBackground}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <Text style={styles.title}>Add to Playlist</Text>
 
-          <TextInput
-            placeholder="New playlist name"
-            placeholderTextColor="#aaa"
-            value={newName}
-            onChangeText={setNewName}
-            style={styles.input}
-          />
-          <TouchableOpacity onPress={handleCreateAndAdd} disabled={loading}>
-            <Text style={styles.button}>{loading ? 'Creating...' : 'Create & Add'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.cancel}>Cancel</Text>
-          </TouchableOpacity>
+              <View style={{ maxHeight: 300 }}>
+                <FlatList
+                  data={playlists}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.playlistItem} onPress={() => handleAdd(item.id)}>
+                      <Image
+                        source={{ uri: item.image || 'https://via.placeholder.com/50' }}
+                        style={styles.playlistImage}
+                      />
+                      <Text style={styles.item}>{item.name}</Text>
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={<Text style={styles.empty}>No playlists found</Text>}
+                />
+              </View>
+
+              <TextInput
+                placeholder="New playlist name"
+                placeholderTextColor="#aaa"
+                value={newName}
+                onChangeText={setNewName}
+                style={styles.input}
+              />
+
+              <TouchableOpacity onPress={handleCreateAndAdd} disabled={loading}>
+                <Text style={styles.button}>{loading ? 'Creating...' : 'Create & Add'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onClose}>
+                <Text style={styles.cancel}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalBackground: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { backgroundColor: COLORS.primary, margin: 20, padding: 20, borderRadius: 8 },
-  title: { fontSize: 18, fontWeight: 'bold', color: COLORS.white, marginBottom: 12 },
-  item: { color: COLORS.white, paddingVertical: 8 },
-  input: { backgroundColor: '#333', color: COLORS.white, padding: 10, borderRadius: 6, marginTop: 12 },
-  button: { color: COLORS.white, textAlign: 'center', marginTop: 10 },
-  cancel: { color: '#aaa', textAlign: 'center', marginTop: 10 },
-  empty: { color: '#aaa', textAlign: 'center', marginVertical: 12 },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 16,
+  },
+  modalContent: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  item: {
+    color: COLORS.white,
+    fontSize: 16,
+  },
+  input: {
+    backgroundColor: '#333',
+    color: COLORS.white,
+    padding: 10,
+    borderRadius: 6,
+    marginTop: 12,
+  },
+  button: {
+    backgroundColor: COLORS.primary,
+    color: COLORS.white,
+    padding: 12,
+    borderRadius: 6,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    marginTop: 12,
+  },
+  cancel: {
+    color: '#ccc',
+    textAlign: 'center',
+    marginTop: 12,
+    fontSize: 16,
+  },
+  empty: {
+    color: COLORS.gray,
+    textAlign: 'center',
+    marginVertical: 12,
+  },
+  playlistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  playlistImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 4,
+    marginRight: 12,
+  },
 });

@@ -6,14 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -89,7 +89,7 @@ export default function ArtistScreen({ artistId }: ArtistScreenProps) {
       <View style={styles.headerImageContainer}>
         <Image source={{ uri: artist.images?.[0]?.url }} style={styles.headerImage} />
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+          <Ionicons name="chevron-back" size={24} color={COLORS.white} />
         </TouchableOpacity>
         <Text style={styles.artistName}>{artist.name}</Text>
       </View>
@@ -154,8 +154,14 @@ export default function ArtistScreen({ artistId }: ArtistScreenProps) {
         <TouchableOpacity 
           key={album.id} 
           style={styles.albumCard}
-        >
-          <Image 
+          onPress={() =>
+            router.push({
+              pathname: '/(drawer)/media/[mediaId]',
+              params: { mediaId: album.id },
+            })
+          }
+        >  
+            <Image 
             source={{ uri: album.images?.[0]?.url }} 
             style={styles.albumImage} 
           />
@@ -298,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    marginHorizontal: 16,
+    marginHorizontal: 130,
     marginTop: 8,
     marginBottom: 16,
     borderColor: COLORS.white,

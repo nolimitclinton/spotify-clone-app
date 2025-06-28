@@ -30,7 +30,7 @@ export default function TabLayout() {
         options={{
           title: 'Library',
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} activeIcon={IMAGES.libraryActive} inactiveIcon={IMAGES.libraryInactive} />
+            <TabIcon focused={focused} activeIcon={IMAGES.libraryActive} tint={true}  />
           ),
         }}
       />

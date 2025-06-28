@@ -3,29 +3,13 @@ import { ReactNode } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { IMAGES } from '../constants/images';
 import { COLORS, FONTS } from '../constants/theme';
-import { useSpotify } from '../context/spotifyContext';
 
 type Props = {
   children: ReactNode;
-  scroll?: boolean; 
+  scroll?: boolean;
 };
 
 export default function BackgroundScreen({ children, scroll = true }: Props) {
-  const { currentTrack, isPlaying, togglePlayback } = useSpotify();
-  const DEFAULT_CARD = {
-    image: IMAGES.doja,
-    title: 'No Track Playing',
-    artist: 'Start browsing to play a song',
-  };
-  
-  const renderCard = currentTrack
-    ? {
-        image: { uri: currentTrack.album.images[0]?.url },
-        title: currentTrack.name,
-        artist: currentTrack.artists.map((a: any) => a.name).join(', '),
-      }
-    : DEFAULT_CARD;
-
   const Wrapper = scroll ? ScrollView : View;
 
   return (
@@ -35,24 +19,17 @@ export default function BackgroundScreen({ children, scroll = true }: Props) {
       </Wrapper>
 
       <View style={styles.browseCard}>
-        <Image source={renderCard.image} style={styles.browseImage} />
+        <Image source={IMAGES.doja} style={styles.browseImage} />
         <View style={styles.browseText}>
-          <Text style={styles.browseTitle}>{renderCard.title}</Text>
-          <Text style={styles.browseArtist}>{renderCard.artist}</Text>
+          <Text style={styles.browseTitle}>No Track Playing</Text>
+          <Text style={styles.browseArtist}>Start browsing to play a song</Text>
         </View>
         <TouchableOpacity style={styles.featuredAddButton}>
           <Image source={IMAGES.tv} style={styles.connectButton} />
         </TouchableOpacity>
-        {currentTrack && (
-          <TouchableOpacity onPress={togglePlayback}>
-            <Ionicons
-              name={isPlaying ? 'pause' : 'play'}
-              size={16}
-              color={COLORS.white}
-              style={styles.browseIcon}
-            />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.featuredAddButton}>
+          <Ionicons name="play" size={18} color={COLORS.white} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -65,8 +42,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   container: {
-    paddingTop: 80, 
-    paddingBottom: 130, 
+    paddingTop: 80,
+    paddingBottom: 130,
     paddingHorizontal: 16,
   },
   browseCard: {
@@ -100,9 +77,6 @@ const styles = StyleSheet.create({
     color: '#ccc',
     fontSize: 12,
     fontFamily: FONTS.dmSans,
-  },
-  browseIcon: {
-    marginRight: 12,
   },
   featuredAddButton: {
     width: 24,
