@@ -65,8 +65,8 @@ export default function TrackCard({
         <View style={styles.trackInfo}>
           <Text style={styles.title} numberOfLines={1}>{track.name}</Text>
           <Text style={styles.subtitle} numberOfLines={1}>
-            {subtitle || track.artists.map(a => a.name).join(', ')}
-          </Text>
+              {subtitle || (Array.isArray(track.artists) ? track.artists.map(a => a.name).join(', ') : 'Unknown Artist')}
+            </Text>
         </View>
 
         {showEllipsis && (

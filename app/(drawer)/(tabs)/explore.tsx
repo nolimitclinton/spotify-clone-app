@@ -24,7 +24,7 @@ type FilterType = (typeof FILTERS)[number] | 'All';
 export default function LibraryScreen() {
   const { playlists, shows, albums, artists, likedSongs } = useLibrary();
   const { user } = useSpotify();
-  const { createPlaylist } = usePlaylist();
+  const { createPlaylist, fetchPlaylists } = usePlaylist();
   const [filter, setFilter] = useState<FilterType>('All');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
@@ -65,16 +65,22 @@ export default function LibraryScreen() {
       Alert.alert('Error', 'Please enter a playlist name');
       return;
     }
-
+  
     setIsCreating(true);
     try {
       const result = await createPlaylist(newPlaylistName);
       if (result) {
+        Alert.alert('Success', `Playlist "${newPlaylistName}" created successfully`);
         setShowCreateModal(false);
         setNewPlaylistName('');
+        
+        fetchPlaylists(); 
+      } else {
+        Alert.alert('Error', 'Failed to create playlist');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to create playlist');
+      console.error('Create playlist error:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create playlist');
     } finally {
       setIsCreating(false);
     }

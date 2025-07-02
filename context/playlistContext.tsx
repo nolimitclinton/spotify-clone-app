@@ -23,6 +23,9 @@ interface PlaylistContextType {
   createPlaylist: (name: string) => Promise<Playlist | null>;
   addToPlaylist: (playlistId: string, track: Track) => Promise<void>;
   editPlaylist: (playlistId: string, name: string, description?: string) => Promise<void>;
+  removeFromPlaylist: (playlistId: string, trackUri: string) => Promise<void>;
+  getPlaylistTracks: (playlistId: string) => Promise<Track[]>;
+  playPlaylist: (tracks: Track[], shuffle?: boolean) => void;
   deletePlaylist: (playlistId: string) => Promise<void>;
   fetchPlaylists: () => Promise<void>;
   clearError: () => void;
@@ -169,7 +172,68 @@ export const PlaylistProvider = ({ children }: { children: React.ReactNode }) =>
       setIsLoading(false);
     }
   };
-
+  const removeFromPlaylist = async (playlistId: string, trackUri: string) => {
+    if (!accessToken) {
+      setError('No access token');
+      return;
+    }
+  
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tracks: [{ uri: trackUri }],
+          }),
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to remove track');
+      }
+  
+      await fetchPlaylists();
+    } catch (err) {
+      console.error('Remove from playlist failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to remove track');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const getPlaylistTracks = async (playlistId: string): Promise<Track[]> => {
+    if (!accessToken) return [];
+    try {
+      const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await res.json();
+      return data.items
+        .filter((item: any) => item.track && item.track.uri)
+        .map((item: any) => ({
+          id: item.track.id,
+          name: item.track.name,
+          uri: item.track.uri,
+          album: item.track.album,
+          artists: item.track.artists,
+        }));
+    } catch (err) {
+      console.error('Failed to fetch playlist tracks:', err);
+      return [];
+    }
+  };
+  
+  const playPlaylist = (tracks: Track[], shuffle = false) => {
+    if (!tracks.length) return;
+    const trackNames = tracks.map((t) => t.name).join(', ');
+    console.log(`Now playing: ${trackNames}`, shuffle ? '(Shuffled)' : '');
+  };
   const deletePlaylist = async (playlistId: string) => {
     if (!accessToken) {
       setError('No access token');
@@ -212,6 +276,9 @@ export const PlaylistProvider = ({ children }: { children: React.ReactNode }) =>
     createPlaylist,
     addToPlaylist,
     editPlaylist,
+    removeFromPlaylist,
+    getPlaylistTracks,
+    playPlaylist,
     deletePlaylist,
     fetchPlaylists,
     clearError,
