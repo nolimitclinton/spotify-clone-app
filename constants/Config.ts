@@ -1,6 +1,7 @@
 export const CLIENT_ID = '992dce52effa4ed39932079b435fed5b';
 export const SCOPES = [
   'playlist-modify-public',
+  'playlist-modify-private',
   'user-read-email',
   'user-read-private',
   'user-top-read',

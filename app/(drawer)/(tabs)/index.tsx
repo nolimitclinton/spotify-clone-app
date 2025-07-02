@@ -24,7 +24,7 @@ const HomeScreen = () => {
     userPlaylists,
     topArtists,
     getTopArtists,
-    getFeaturedPlaylists,
+    //getFeaturedPlaylists,
     getNewReleases,
     getUserPlaylists,
     topTracks,
@@ -63,7 +63,7 @@ const HomeScreen = () => {
     const fetchData = async () => {
       try {
         await Promise.all([
-          getFeaturedPlaylists(),
+          //getFeaturedPlaylists(),
           getNewReleases(),
           getUserPlaylists(),
           getTopArtists(),
@@ -148,10 +148,10 @@ const HomeScreen = () => {
               {userPlaylists.map(item => renderItem(item, 'playlist'))}
             </View>
 
-            <Text style={styles.sectionTitle}>Featured playlists</Text>
+            {/* <Text style={styles.sectionTitle}>Featured playlists</Text>
             <View style={styles.grid}>
               {featuredPlaylists.map(item => renderItem(item, 'playlist'))}
-            </View>
+            </View> */}
           </>
         );
       case 'albums':

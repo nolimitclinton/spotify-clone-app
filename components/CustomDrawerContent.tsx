@@ -31,8 +31,8 @@ export default function CustomDrawerContent({ navigation }: DrawerContentCompone
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: COLORS.surface },
-  avatar: { width: 60, height: 60, borderRadius: 30, marginBottom: 10 },
+  container: { flex: 1, padding: 35, backgroundColor: COLORS.surface  },
+  avatar: { width: 60, height: 60, borderRadius: 30, marginBottom: 30 },
   username: { color: COLORS.white, fontSize: 18, marginBottom: 30 },
   logout: {
     flexDirection: 'row',

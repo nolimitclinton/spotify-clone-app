@@ -1,15 +1,19 @@
 import BackgroundScreen from '@/components/BackgroundScreen';
 import { COLORS, FONTS } from '@/constants/theme';
 import { useLibrary } from '@/context/libraryContext';
+import { usePlaylist } from '@/context/playlistContext';
 import { useSpotify } from '@/context/spotifyContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Alert,
   FlatList,
   Image,
+  Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -19,8 +23,12 @@ type FilterType = (typeof FILTERS)[number] | 'All';
 
 export default function LibraryScreen() {
   const { playlists, shows, albums, artists, likedSongs } = useLibrary();
-   const { user } = useSpotify();
+  const { user } = useSpotify();
+  const { createPlaylist } = usePlaylist();
   const [filter, setFilter] = useState<FilterType>('All');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
 
   const allItems = [
@@ -52,11 +60,30 @@ export default function LibraryScreen() {
     return allItems.filter((item) => item.type === typeMap[filter]);
   };
 
+  const handleCreatePlaylist = async () => {
+    if (!newPlaylistName.trim()) {
+      Alert.alert('Error', 'Please enter a playlist name');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const result = await createPlaylist(newPlaylistName);
+      if (result) {
+        setShowCreateModal(false);
+        setNewPlaylistName('');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create playlist');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const renderCard = ({ item }: any) => {
     const onPress = () => {
       if (item.id === 'liked-songs') {
         router.push('/(drawer)/liked');
-      
       } else if (item.type === 'playlist') {
         router.push({
           pathname: '/(drawer)/playlist/[playlistId]',
@@ -92,7 +119,6 @@ export default function LibraryScreen() {
   return (
     <BackgroundScreen scroll={false}>
       <View style={styles.container}>
-        
         <View style={styles.topBar}>
           <View style={styles.topLeft}>
             {user?.images?.[0]?.url && (
@@ -105,7 +131,10 @@ export default function LibraryScreen() {
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="search-outline" size={22} color={COLORS.white} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => setShowCreateModal(true)}
+            >
               <Ionicons name="add-outline" size={22} color={COLORS.white} />
             </TouchableOpacity>
           </View>
@@ -136,6 +165,45 @@ export default function LibraryScreen() {
           renderItem={renderCard}
           ListEmptyComponent={<Text style={styles.empty}>No items found.</Text>}
         />
+
+        {/* Create Playlist Modal */}
+        <Modal
+          visible={showCreateModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowCreateModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Create Playlist</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Playlist name"
+                placeholderTextColor={COLORS.gray}
+                value={newPlaylistName}
+                onChangeText={setNewPlaylistName}
+                autoFocus
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setShowCreateModal(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.createButton}
+                  onPress={handleCreatePlaylist}
+                  disabled={isCreating}
+                >
+                  <Text style={styles.buttonText}>
+                    {isCreating ? 'Creating...' : 'Create'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </BackgroundScreen>
   );
@@ -234,5 +302,54 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     marginTop: 40,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    backgroundColor: COLORS.background,
+    color: COLORS.white,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    backgroundColor: COLORS.gray,
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  createButton: {
+    backgroundColor: COLORS.primary,
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+    marginLeft: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
 });

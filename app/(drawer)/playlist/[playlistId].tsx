@@ -53,6 +53,7 @@ export default function PlaylistDetailScreen() {
 
     fetchPlaylist();
   }, [playlistId, playlists]);
+
   const handleRemove = async (trackId: string) => {
     try {
       const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
@@ -74,6 +75,12 @@ export default function PlaylistDetailScreen() {
     }
   };
 
+  const handlePlayPlaylist = (shuffle = false) => {
+    if (tracks.length === 0) return;
+    console.log(`Playing playlist ${playlistInfo?.name}`, shuffle ? 'with shuffle' : '');
+  
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -88,6 +95,25 @@ export default function PlaylistDetailScreen() {
           />
           <Text style={styles.name}>{playlistInfo.name}</Text>
           <Text style={styles.trackCount}>{tracks.length} Songs</Text>
+          
+          {/* Play and Shuffle Buttons */}
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={styles.shuffleButton}
+              onPress={() => handlePlayPlaylist(true)}
+            >
+              <Ionicons name="shuffle" size={20} color={COLORS.background} />
+              <Text style={styles.buttonText}>Shuffle</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.playButton}
+              onPress={() => handlePlayPlaylist(false)}
+            >
+              <Ionicons name="play" size={20} color={COLORS.background} />
+              <Text style={styles.buttonText}>Play</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -133,10 +159,41 @@ const styles = StyleSheet.create({
   trackCount: {
     color: COLORS.gray,
     fontSize: 14,
+    marginBottom: 16,
   },
   empty: {
     color: '#888',
     marginTop: 40,
     textAlign: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    width: '100%',
+    marginTop: 8,
+  },
+  shuffleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    gap: 8,
+  },
+  playButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 32,
+    borderRadius: 20,
+    gap: 8,
+  },
+  buttonText: {
+    color: COLORS.background,
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });

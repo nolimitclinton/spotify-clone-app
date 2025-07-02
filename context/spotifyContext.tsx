@@ -61,8 +61,8 @@ type SpotifyContextType = {
   getArtist: (artistId: string) => Promise<Artist | null>;
   getArtistTopTracks: (artistId: string) => Promise<Track[]>;
   getArtistAlbums: (artistId: string) => Promise<Album[]>;
-  getRelatedArtists: (artistId: string) => Promise<Artist[]>;
-  getFeaturedPlaylists: () => Promise<void>;
+  //getRelatedArtists: (artistId: string) => Promise<Artist[]>;
+  //getFeaturedPlaylists: () => Promise<void>;
   getNewReleases: () => Promise<void>;
   getUserPlaylists: () => Promise<void>;
   getTopArtists: () => Promise<void>;
@@ -211,18 +211,18 @@ export const SpotifyProvider = ({ children }: { children: React.ReactNode }) => 
       console.error('Failed to fetch top artists:', error);
     }
   };
-  const getFeaturedPlaylists = async () => {
-    if (!accessToken) return;
-    try {
-      const res = await fetch('https://api.spotify.com/v1/browse/featured-playlists?country=US&limit=10', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const data = await res.json();
-      setFeaturedPlaylists(data.playlists?.items || []);
-    } catch (error) {
-      console.error('Failed to fetch featured playlists:', error);
-    }
-  };
+  // const getFeaturedPlaylists = async () => {
+  //   if (!accessToken) return;
+  //   try {
+  //     const res = await fetch('https://api.spotify.com/v1/browse/featured-playlists?country=US&limit=10', {
+  //       headers: { Authorization: `Bearer ${accessToken}` },
+  //     });
+  //     const data = await res.json();
+  //     setFeaturedPlaylists(data.playlists?.items || []);
+  //   } catch (error) {
+  //     console.error('Failed to fetch featured playlists:', error);
+  //   }
+  // };
 
   const getNewReleases = async () => {
     if (!accessToken) return;
@@ -274,21 +274,21 @@ export const SpotifyProvider = ({ children }: { children: React.ReactNode }) => 
     }
   };
 
-const getRelatedArtists = async (artistId: string) => {
-  if (!accessToken) return [];
-  try {
-    const res = await fetch(
-      `https://api.spotify.com/v1/artists/${artistId}/related-artists`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const data = await res.json();
-    console.log('Related artist data:', data);
-    return data.artists || [];
-  } catch (error) {
-    console.error('Failed to fetch related artists:', error);
-    return [];
-  }
-};
+// const getRelatedArtists = async (artistId: string) => {
+//   if (!accessToken) return [];
+//   try {
+//     const res = await fetch(
+//       `https://api.spotify.com/v1/artists/${artistId}/related-artists`,
+//       { headers: { Authorization: `Bearer ${accessToken}` } }
+//     );
+//     const data = await res.json();
+//     console.log('Related artist data:', data);
+//     return data.artists || [];
+//   } catch (error) {
+//     console.error('Failed to fetch related artists:', error);
+//     return [];
+//   }
+// };
 
   const getArtistTopTracks = async (artistId: string) => {
     if (!accessToken) return [];
@@ -343,8 +343,8 @@ const getRelatedArtists = async (artistId: string) => {
     getArtist,
     getArtistTopTracks,
     getArtistAlbums,
-    getRelatedArtists,
-    getFeaturedPlaylists,
+    //getRelatedArtists,
+    //getFeaturedPlaylists,
     getNewReleases,
     getUserPlaylists,
     getTopArtists,

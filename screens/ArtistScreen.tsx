@@ -1,4 +1,3 @@
-import ArtistCard from '@/components/ArtistCard';
 import TrackCard from '@/components/TrackCard';
 import { COLORS, FONTS } from '@/constants/theme';
 import { useSpotify } from '@/context/spotifyContext';
@@ -28,7 +27,6 @@ export default function ArtistScreen({ artistId }: ArtistScreenProps) {
         getArtist, 
         getArtistTopTracks, 
         getArtistAlbums, 
-        getRelatedArtists 
       } = useSpotify();
   const router = useRouter();
 
@@ -37,24 +35,21 @@ export default function ArtistScreen({ artistId }: ArtistScreenProps) {
   const [albums, setAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllTracks, setShowAllTracks] = useState(false);
-  const [relatedArtists, setRelatedArtists] = useState<any[]>([]);
 
   useEffect(() => {
     if (!accessToken) return;
 
     const fetchArtistData = async () => {
         try {
-          const [artistRes, tracksRes, albumsRes, relatedRes] = await Promise.all([
+          const [artistRes, tracksRes, albumsRes] = await Promise.all([
             getArtist(artistId),
             getArtistTopTracks(artistId),
             getArtistAlbums(artistId),
-            getRelatedArtists(artistId),
           ]);
       
           setArtist(artistRes);
           setTopTracks(tracksRes || []);
           setAlbums(albumsRes || []);
-          setRelatedArtists(relatedRes || []);
         } catch (err) {
           console.error('Error loading artist:', err);
         } finally {
@@ -176,26 +171,6 @@ export default function ArtistScreen({ artistId }: ArtistScreenProps) {
     </ScrollView>
   </>
 )}
-
-        {/* You may also like */}
-        {relatedArtists.length > 0 ? (
-        <>
-            <Text style={styles.sectionTitle}>Fans Also Like</Text>
-            <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.relatedArtistsContainer}
-            >
-            {relatedArtists.slice(0, 10).map(related => (
-                <View key={related.id} style={styles.artistCardWrapper}>
-                <ArtistCard artist={related} variant="compact" />
-                </View>
-            ))}
-            </ScrollView>
-        </>
-        ) : (
-        <Text style={styles.sectionTitle}>No similar artists found</Text>
-        )}
         </ScrollView>
         );
         }
@@ -341,12 +316,5 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     fontSize: 12,
     fontFamily: FONTS.dmSans,
-  },
-  relatedArtistsContainer: {
-    paddingLeft: 16,
-    paddingBottom: 24,
-  },
-  artistCardWrapper: {
-    marginRight: 16,
   },
 });
