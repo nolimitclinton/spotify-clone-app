@@ -1,5 +1,7 @@
 import * as AuthSession from 'expo-auth-session';
+import { Audio } from 'expo-av';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { CLIENT_ID, SCOPES } from '../constants/Config';
 import { deleteToken, getToken, saveToken } from '../utils/storage';
 
@@ -16,7 +18,7 @@ type Artist = {
   followers: { total: number };
 };
 
-type Track = {
+export type Track = {
   id: string;
   name: string;
   album: {
@@ -68,6 +70,10 @@ type SpotifyContextType = {
   getTopArtists: () => Promise<void>;
   getTopTracks: () => Promise<void>; 
   setCurrentTrack: (track: Track | null) => void;
+  sound: Audio.Sound | null;
+  isPlaying: boolean;
+  playTrack: (track: Track) => void;
+  togglePlayback: () => void;
 };
 
 const SpotifyContext = createContext<SpotifyContextType | undefined>(undefined);
@@ -84,6 +90,8 @@ export const SpotifyProvider = ({ children }: { children: React.ReactNode }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [topTracks, setTopTracks] = useState<Track[]>([]);
   const redirectUri = AuthSession.makeRedirectUri({ useProxy: true,} as any);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
@@ -199,6 +207,64 @@ export const SpotifyProvider = ({ children }: { children: React.ReactNode }) => 
       console.error('Search failed:', err);
     }
   };
+  const playTrack = async (track: Track) => {
+    setCurrentTrack(track);
+    const trackTitle = track.name;
+    const artistName = track.artists[0]?.name;
+  
+    try {
+      const res = await fetch(
+        `https://api.deezer.com/search?q=track:"${encodeURIComponent(trackTitle)}" artist:"${encodeURIComponent(artistName)}"`
+      );
+      const json = await res.json();
+      const deezerTrack = json.data?.[0];
+  
+      if (!deezerTrack?.preview) {
+        Alert.alert('Preview not found on Deezer.');
+        return;
+      }
+  
+      // Stop and unload previous sound
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+      }
+  
+      const newSound = new Audio.Sound();
+      await newSound.loadAsync({ uri: deezerTrack.preview });
+      await newSound.playAsync();
+      setSound(newSound);
+      setIsPlaying(true);
+  
+      // Handle playback status updates
+      newSound.setOnPlaybackStatusUpdate(status => {
+        if (!status.isLoaded) return;
+        if (status.didJustFinish) {
+          setIsPlaying(false);
+        }
+      });
+  
+    } catch (err) {
+      console.error('Error playing track:', err);
+      Alert.alert('Playback Error');
+    }
+  };
+  
+  const togglePlayback = async () => {
+    if (!sound) return;
+  
+    const status = await sound.getStatusAsync();
+    if (!status.isLoaded) return;
+  
+    if (status.isPlaying) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
+    } else {
+      await sound.playAsync();
+      setIsPlaying(true);
+    }
+  };
+
   const getTopArtists = async () => {
     if (!accessToken) return;
     try {
@@ -351,6 +417,10 @@ export const SpotifyProvider = ({ children }: { children: React.ReactNode }) => 
     setCurrentTrack,
     topTracks,
     getTopTracks,
+    sound,
+    isPlaying,
+    playTrack,
+    togglePlayback,
   };
 
   return <SpotifyContext.Provider value={value}>{children}</SpotifyContext.Provider>;

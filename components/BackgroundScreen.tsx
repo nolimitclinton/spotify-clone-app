@@ -1,6 +1,14 @@
+import { useSpotify } from '@/context/spotifyContext';
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNode } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { IMAGES } from '../constants/images';
 import { COLORS, FONTS } from '../constants/theme';
 
@@ -11,24 +19,48 @@ type Props = {
 
 export default function BackgroundScreen({ children, scroll = true }: Props) {
   const Wrapper = scroll ? ScrollView : View;
+  const { currentTrack, isPlaying, togglePlayback } = useSpotify();
 
   return (
     <View style={styles.wrapper}>
-      <Wrapper contentContainerStyle={styles.container}>
-        {children}
-      </Wrapper>
+      <Wrapper contentContainerStyle={styles.container}>{children}</Wrapper>
 
       <View style={styles.browseCard}>
-        <Image source={IMAGES.doja} style={styles.browseImage} />
+      {currentTrack?.album?.images?.[0]?.url ? (
+        <Image
+          source={{ uri: currentTrack.album.images[0].url }}
+          style={styles.browseImage}
+        />
+      ) : (
+        <Image
+          source={IMAGES.doja} 
+          style={styles.browseImage}
+        />
+      )}
+
         <View style={styles.browseText}>
-          <Text style={styles.browseTitle}>No Track Playing</Text>
-          <Text style={styles.browseArtist}>Start browsing to play a song</Text>
+          <Text style={styles.browseTitle}>
+            {currentTrack?.name || 'No Track Playing'}
+          </Text>
+          <Text style={styles.browseArtist}>
+            {currentTrack?.artists?.map((a) => a.name).join(', ') ||
+              'Start browsing to play a song'}
+          </Text>
         </View>
+
         <TouchableOpacity style={styles.featuredAddButton}>
           <Image source={IMAGES.tv} style={styles.connectButton} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.featuredAddButton}>
-          <Ionicons name="play" size={18} color={COLORS.white} />
+
+        <TouchableOpacity
+          style={styles.featuredAddButton}
+          onPress={togglePlayback}
+        >
+          <Ionicons
+            name={isPlaying ? 'pause' : 'play'}
+            size={18}
+            color={COLORS.white}
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -54,7 +86,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 12,
     position: 'absolute',
-    bottom: 10,
+    bottom: 20,
     left: 0,
     right: 0,
   },

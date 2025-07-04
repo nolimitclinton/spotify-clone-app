@@ -1,3 +1,5 @@
+import type { Track } from '@/context/spotifyContext';
+import { useSpotify } from '@/context/spotifyContext';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -12,17 +14,6 @@ import {
 import { COLORS, FONTS } from '../constants/theme';
 import PlaylistModal from './PlaylistModal';
 
-type Track = {
-  id: string;
-  name: string;
-  preview_url?: string;
-  album: {
-    images: { url: string }[];
-  };
-  artists: { name: string }[];
-  uri: string;
-};
-
 type TrackCardProps = {
   track: Track;
   showNumber?: boolean;
@@ -30,7 +21,6 @@ type TrackCardProps = {
   subtitle?: string;
   showEllipsis?: boolean;
   onRemoveFromPlaylist?: () => void;
-  onPress?: () => void;
 };
 
 export default function TrackCard({
@@ -43,16 +33,16 @@ export default function TrackCard({
 }: TrackCardProps) {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const { playTrack } = useSpotify();
 
   const handlePress = () => {
-    if (!track.preview_url) {
-      Alert.alert('Preview Unavailable', 'This track does not have a preview.');
-      return;
+    try {
+      playTrack(track);
+    } catch (err) {
+      console.error('Error playing track:', err);
+      Alert.alert('Error', 'Could not play this track.');
     }
-    
   };
-
-  const handleEllipsis = () => setShowMenu(true);
 
   return (
     <>
@@ -65,18 +55,17 @@ export default function TrackCard({
         <View style={styles.trackInfo}>
           <Text style={styles.title} numberOfLines={1}>{track.name}</Text>
           <Text style={styles.subtitle} numberOfLines={1}>
-              {subtitle || (Array.isArray(track.artists) ? track.artists.map(a => a.name).join(', ') : 'Unknown Artist')}
-            </Text>
+            {subtitle || (Array.isArray(track.artists) ? track.artists.map(a => a.name).join(', ') : 'Unknown Artist')}
+          </Text>
         </View>
 
         {showEllipsis && (
-          <TouchableOpacity onPress={handleEllipsis} style={styles.trackEllipsis}>
+          <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.trackEllipsis}>
             <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.gray} />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
 
-      {/* Modal for Add/Remove options */}
       <Modal visible={showMenu} transparent animationType="fade">
         <TouchableOpacity style={styles.overlay} onPress={() => setShowMenu(false)}>
           <View style={styles.menu}>
@@ -101,7 +90,6 @@ export default function TrackCard({
         </TouchableOpacity>
       </Modal>
 
-      {/* Playlist Modal */}
       <PlaylistModal
         visible={showPlaylistModal}
         onClose={() => setShowPlaylistModal(false)}

@@ -19,7 +19,7 @@ import {
 
 export default function MediaDetailScreen() {
   const { mediaId } = useLocalSearchParams<{ mediaId: string }>();
-  const { accessToken } = useSpotify();
+  const { accessToken, playTrack } = useSpotify();
   const router = useRouter();
 
   const [media, setMedia] = useState<any>(null);
@@ -75,7 +75,10 @@ export default function MediaDetailScreen() {
 
   const handlePlayMedia = (shuffle = false) => {
     if (!media || items.length === 0) return;
-    console.log(`Playing ${media.type} ${media.name}`, shuffle ? 'with shuffle' : '');
+    const selectedTrack = shuffle
+      ? items[Math.floor(Math.random() * items.length)]
+      : items[0];
+      playTrack({ ...selectedTrack, album: media });
   };
 
   const handleTrackOptions = (track: any) => {
@@ -176,14 +179,23 @@ export default function MediaDetailScreen() {
         
           return (
             <View style={styles.episodeCard}>
-              <View style={styles.trackInfo}>
+              <TouchableOpacity 
+                style={styles.trackInfo}
+                onPress={() => {
+                  if (media.type === 'album') {
+                    playTrack({ ...item, album: media });
+                  }
+                }}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.episodeTitle} numberOfLines={2}>
                   {item.name}
                 </Text>
                 <Text style={styles.episodeInfo}>
                   {formattedDate} • {Math.round(item.duration_ms / 60000)} min
                 </Text>
-              </View>
+              </TouchableOpacity>
+          
               <TouchableOpacity 
                 onPress={() => handleTrackOptions(item)}
                 style={styles.optionsButton}

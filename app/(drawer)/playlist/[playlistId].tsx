@@ -1,3 +1,4 @@
+import BackgroundScreen from '@/components/BackgroundScreen';
 import TrackCard from '@/components/TrackCard';
 import { COLORS } from '@/constants/theme';
 import { useLibrary } from '@/context/libraryContext';
@@ -22,7 +23,7 @@ export default function PlaylistDetailScreen() {
   const { playlistId } = useLocalSearchParams();
   const id = Array.isArray(playlistId) ? playlistId[0] : playlistId;
 
-  const { accessToken, searchTracks, searchResults } = useSpotify();
+  const { accessToken, searchTracks, searchResults, playTrack } = useSpotify();
   const { playlists, editPlaylist, addToPlaylist, removeFromPlaylist, getPlaylistTracks } = usePlaylist();
   const { likedSongs } = useLibrary();
   const navigation = useNavigation();
@@ -49,15 +50,15 @@ export default function PlaylistDetailScreen() {
 
       const fetchedTracks = await getPlaylistTracks(id);
       setTracks(fetchedTracks);
-      };
+    };
 
-      fetchPlaylist();
-    }, [playlistId, playlists]);
+    fetchPlaylist();
+  }, [playlistId, playlists]);
 
   const handleRemove = async (trackId: string) => {
     try {
       await removeFromPlaylist(id, `spotify:track:${trackId}`);
-      setTracks(tracks.filter(track => track.id !== trackId));
+      setTracks((prev) => prev.filter((track) => track.id !== trackId));
     } catch (err) {
       console.error('Failed to remove track:', err);
     }
@@ -65,19 +66,16 @@ export default function PlaylistDetailScreen() {
 
   const handlePlayPlaylist = (shuffle = false) => {
     if (tracks.length === 0) return;
-    console.log(`Playing playlist ${playlistInfo?.name}`, shuffle ? 'with shuffle' : '');
+    const selectedTrack = shuffle
+      ? tracks[Math.floor(Math.random() * tracks.length)]
+      : tracks[0];
+    playTrack(selectedTrack);
   };
 
   const handleAddToPlaylist = async (track: any) => {
     try {
       await addToPlaylist(id, track);
-      setTracks([...tracks, {
-        id: track.id,
-        name: track.name,
-        uri: track.uri,
-        album: track.album,
-        artists: track.artists,
-      }]);
+      setTracks((prev) => [...prev, track]);
       setShowAddModal(false);
     } catch (err) {
       console.error('Failed to add track:', err);
@@ -89,7 +87,7 @@ export default function PlaylistDetailScreen() {
 
     try {
       await editPlaylist(id, newPlaylistName);
-      setPlaylistInfo({ ...playlistInfo, name: newPlaylistName });
+      setPlaylistInfo((prev: any) => ({ ...prev, name: newPlaylistName }));
       setShowEditModal(false);
     } catch (err) {
       console.error('Failed to edit playlist:', err);
@@ -97,7 +95,7 @@ export default function PlaylistDetailScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <BackgroundScreen scroll={false}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Ionicons name="chevron-back" size={24} color={COLORS.white} />
       </TouchableOpacity>
@@ -275,7 +273,7 @@ export default function PlaylistDetailScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+       </BackgroundScreen>
   );
 }
 
@@ -287,20 +285,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   backButton: {
-    marginBottom: 12,
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 1,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 20,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 10, 
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginBottom: 12,
+    paddingTop: 50, 
+    paddingHorizontal: 16,
   },
   editButton: {
     padding: 8,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 20,
   },
   cover: {
     width: 160,
